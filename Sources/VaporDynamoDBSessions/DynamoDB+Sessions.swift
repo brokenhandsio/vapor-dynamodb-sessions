@@ -19,7 +19,9 @@ struct DynamoDBSessions: SessionDriver {
     }
 
     func deleteSession(_ sessionID: SessionID, for request: Request) -> EventLoopFuture<Void> {
-        fatalError()
+        let (dynamoDB, tableName) = request.dynamoDBProvider.make()
+        let input = DynamoDB.DeleteItemInput(key: ["id": .s(sessionID.string)], tableName: tableName)
+        return dynamoDB.deleteItem(input, logger: request.logger, on: request.eventLoop).transform(to: ())
     }
 
     
