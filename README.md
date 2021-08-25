@@ -17,7 +17,7 @@
     </a>
 </p>
 
-A simple library to use DynamoDB to back Vapor's sessions
+A simple library to use DynamoDB with [Soto](https://github.com/soto-project/soto) to back Vapor's sessions.
 
 ## Installation
 
@@ -45,66 +45,23 @@ targets: [
 
 ## Usage
 
-You must be using the `SessionsMiddleware` on all routes you interact with CSRF with. You can enable this globally in **configure.swift** with:
+To start, you must configure the `DynamoDBSessionsProvider` with the `AWSClient` and a table name. In **configure.swift** set the provider on the application:
 
 ```swift
+app.dynamoDBSessions.provider = DynamoDBSessionsProvider(client: app.aws.client, tableName: tableName)
+```
+
+The `DynamoDBSessionsProvider` also takes an optional AWS `region` and endpoint if you need to configure these. To learn how to configure the `AWSClient` see the [Soto Documentation](https://soto.codes/user-guides/using-soto-with-vapor.html).
+
+Next, tell Vapor to use DynamoDB for sessions:
+
+```swift
+app.sessions.use(.dynamodb)
 app.middleware.use(app.sessions.middleware)
 ```
 
-For more information on sessions, [see the documentation](https://docs.vapor.codes/4.0/sessions/).
+**Note**: You must set DynamoDB as the `SessionDriver` before adding the `SessionsMiddleware`.
 
-### GET routes
+### Database Requirements
 
-In GET routes that could return a POST request you want to protect, store a CSRF token in the session:
-
-```swift
-let csrfToken = req.csrf.storeToken()
-```
-
-This function returns a token you can then pass to your HTML page. For example, with Leaf this would look like:
-
-```swift
-let csrfToken = req.csrf.storeToken()
-let context = MyPageContext(csrfToken: csrfToken)
-return req.view.render("myPage", context)
-```
-
-You then need to return the token when the form is submitted. With Leaf, this would look something like:
-
-```html
-<form method="post">
-    <input type="hidden" name="csrfToken" value="#(csrfToken)">
-    <input type="submit" value="Submit">
-</form>
-```
-
-### POST routes
-
-You can protect your POST routes either with Middleware or manually verifying the token.
-
-#### Middleware
-
-VaporCSRF provides a middleware that checks the token for you. You can apply this to your routes with:
-
-```swift
-let csrfTokenPotectedRoutes = app.grouped(CSRFMiddleware())
-```
-
-#### Manual Verification
-
-If you want to control when you verify the CSRF token, you can do this manually in your route handler with `try req.csrf.verifyToken()`. E.g.:
-
-```swift
-app.post("myForm") { req -> EventLoopFuture<Response> in
-    try req.csrf.verifyToken()
-    // ...
-}
-```
-
-### Configuration
-
-By default, VaporCSRF looks for a value with the key `csrfToken` in the POST body. You can change the key with:
-
-```swift
-app.csrf.setTokenContentKey("aDifferentKey")
-```
+`VaporDynamoDBSessions` will work with its own table or as part of an application using a [single-table design](https://www.alexdebrie.com/posts/dynamodb-single-table/). The only requirements for the library to work is that the table must have a partition key named `pk` and a sort key named `sk`.
