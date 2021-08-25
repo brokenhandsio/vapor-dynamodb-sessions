@@ -3,11 +3,11 @@
     "pins": [
       {
         "package": "async-http-client",
-        "repositoryURL": "https://github.com/swift-server/async-http-client.git",
+        "repositoryURL": "https://github.com/slashmo/async-http-client.git",
         "state": {
-          "branch": null,
-          "revision": "8e4d51908dd49272667126403bf977c5c503f78f",
-          "version": "1.5.0"
+          "branch": "feature/tracing",
+          "revision": "59b61ebbe7fbf1bf51dbbaa72b60dd4ed749b569",
+          "version": null
         }
       },
       {
@@ -57,20 +57,20 @@
       },
       {
         "package": "soto",
-        "repositoryURL": "https://github.com/soto-project/soto.git",
+        "repositoryURL": "https://github.com/brokenhandsio/soto.git",
         "state": {
-          "branch": null,
-          "revision": "693fc693b580a2c635c1457d09cbf54411691ffe",
-          "version": "5.7.0"
+          "branch": "tracing",
+          "revision": "675d6294dd8678d186f59ab5de572c85b45ccfe1",
+          "version": null
         }
       },
       {
         "package": "soto-core",
-        "repositoryURL": "https://github.com/soto-project/soto-core.git",
+        "repositoryURL": "https://github.com/brokenhandsio/soto-core.git",
         "state": {
-          "branch": null,
-          "revision": "98c7f11f9e66480984340950e7d0241c7456ac8e",
-          "version": "5.5.0"
+          "branch": "tracing",
+          "revision": "af1dbd33a0b845b608abf727e4120e59de6727d1",
+          "version": null
         }
       },
       {
@@ -89,6 +89,33 @@
           "branch": null,
           "revision": "3bea268b223651c4ab7b7b9ad62ef9b2d4143eb6",
           "version": "1.1.6"
+        }
+      },
+      {
+        "package": "swift-distributed-tracing",
+        "repositoryURL": "https://github.com/apple/swift-distributed-tracing.git",
+        "state": {
+          "branch": null,
+          "revision": "fce1f7c91ad5a733500ea1cdd7ccd7aed9130536",
+          "version": "0.1.4"
+        }
+      },
+      {
+        "package": "swift-distributed-tracing-baggage",
+        "repositoryURL": "https://github.com/apple/swift-distributed-tracing-baggage",
+        "state": {
+          "branch": null,
+          "revision": "b68b3277985555995298426a35084b832dbc51ae",
+          "version": "0.1.1"
+        }
+      },
+      {
+        "package": "swift-distributed-tracing-baggage-core",
+        "repositoryURL": "https://github.com/apple/swift-distributed-tracing-baggage-core.git",
+        "state": {
+          "branch": null,
+          "revision": "9a2884a37f39e08ebd225627c400feae9c6ea8df",
+          "version": "0.1.1"
         }
       },
       {
@@ -156,11 +183,11 @@
       },
       {
         "package": "vapor",
-        "repositoryURL": "https://github.com/vapor/vapor.git",
+        "repositoryURL": "https://github.com/brokenhandsio/vapor.git",
         "state": {
-          "branch": null,
-          "revision": "5113bfcb0dbcfaefdc043acd8e161046eb4fbb65",
-          "version": "4.48.4"
+          "branch": "tracing",
+          "revision": "6b3fe39d3468958cce7d115a9ded9ed728b9b9a9",
+          "version": null
         }
       },
       {

@@ -3,6 +3,7 @@ import XCTest
 import Vapor
 import XCTVapor
 import SotoDynamoDB
+import Baggage
 
 final class DynamoDBSessionTests: XCTestCase {
 
@@ -11,10 +12,12 @@ final class DynamoDBSessionTests: XCTestCase {
     let tableName = "session-tests"
     var dynamoDB: DynamoDB!
     var dynamoDBEndpoint: String!
+    var context: LoggingContext!
 
     override func setUpWithError() throws {
         eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         app = Application(.testing, .shared(eventLoopGroup))
+        context = DefaultLoggingContext.topLevel(logger: app.logger)
         let awsClient = AWSClient(credentialProvider: .static(accessKeyId: "SOMETHING", secretAccessKey: "SOMETHINGLESE"), httpClientProvider: .shared(app.http.client.shared))
         app.aws.client = awsClient
         dynamoDBEndpoint = Environment.get("DYNAMODB_ENDPOINT") ?? "http://localhost:8000"
@@ -181,7 +184,7 @@ final class DynamoDBSessionTests: XCTestCase {
     func setupTable() throws {
         let deleteTableInput = DynamoDB.DeleteTableInput(tableName: self.tableName)
         do {
-            _ = try dynamoDB.deleteTable(deleteTableInput).wait()
+            _ = try dynamoDB.deleteTable(deleteTableInput, context: context).wait()
         } catch {
             // Swallow error in case table doesn't exist yet
         }
@@ -196,6 +199,6 @@ final class DynamoDBSessionTests: XCTestCase {
                 .init(attributeName: "sk", keyType: .range)
             ],
             tableName: self.tableName)
-        _ = try dynamoDB.createTable(createTableInput).wait()
+        _ = try dynamoDB.createTable(createTableInput, context: context).wait()
     }
 }
