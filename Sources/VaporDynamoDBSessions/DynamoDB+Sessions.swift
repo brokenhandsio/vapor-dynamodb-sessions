@@ -41,11 +41,13 @@ extension Application.Sessions.Provider {
 
 
 public final class SessionRecord: Codable {
-    public let id: SessionID
+    public let pk: SessionID
+    public let sk: String
     public var data: SessionData
 
     public init(id: SessionID, data: SessionData) {
-        self.id = id
+        self.pk = id
+        self.sk = "SESSION_RECORD"
         self.data = data
     }
 }
