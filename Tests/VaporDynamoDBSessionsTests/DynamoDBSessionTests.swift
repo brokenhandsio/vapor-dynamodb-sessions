@@ -7,7 +7,7 @@ final class DynamoDBSessionTests: XCTestCase {
 
     var app: Application!
     var eventLoopGroup: EventLoopGroup!
-    let tableName = ""
+    let tableName = "session-tests"
 
     override func setUpWithError() throws {
         eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
