@@ -17,6 +17,8 @@ jobs:
     - uses: actions/checkout@master
     - name: Run tests
       run: swift test --enable-code-coverage --sanitize=thread
+      env:
+        DYNAMODB_ENDPOINT: http://dynamodb:8000
     - name: Setup container for codecov upload
       run: apt-get update && apt-get install curl -y
     - name: Process coverage file
