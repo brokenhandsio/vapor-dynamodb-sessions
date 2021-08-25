@@ -26,7 +26,7 @@ Add the library in your dependencies array in **Package.swift**:
 ```swift
 dependencies: [
     // ...,
-    .package(name: "VaporDynamoDBSessions", url: "https://github.com/brokenhandsio/vapor-dynamodb-sessions.git", from: "1.0.0")
+    package(name: "VaporDynamoDBSessions", url: "https://github.com/brokenhandsio/vapor-dynamodb-sessions.git", from: "1.0.0"),
 ],
 ```
 
@@ -37,7 +37,7 @@ targets: [
     .target(name: "App", dependencies: [
         .product(name: "Vapor", package: "vapor"), 
         // ..., 
-        .product(name: "VaporDynamoDBSessions", package: "vapor-dynamodb-sessions")
+        .product(name: "VaporDynamoDBSessions", package: "VaporDynamoDBSessions")
     ]),
     // ...
 ]
