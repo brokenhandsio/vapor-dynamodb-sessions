@@ -1,27 +1,39 @@
 import Vapor
 import SotoDynamoDB
 
+public extension Request {
+    var dynamoDBSessions: DynamoDBSessions {
+        .init(request: self)
+    }
+
+    struct DynamoDBSessions {
+        var provider: DynamoDBSessionsProvider {
+            return request.application.dynamoDBSessions.provider
+        }
+
+        let request: Request
+    }
+}
+
 public extension Application {
-    var aws: AWS {
+    var dynamoDBSessions: DynamoDBSessions {
         .init(application: self)
     }
 
-    struct AWS {
-        struct ClientKey: StorageKey {
-            typealias Value = AWSClient
+    struct DynamoDBSessions {
+        struct ProviderKey: StorageKey {
+            typealias Value = DynamoDBSessionsProvider
         }
 
-        public var client: AWSClient {
+        public var provider: DynamoDBSessionsProvider {
             get {
-                guard let client = self.application.storage[ClientKey.self] else {
-                    fatalError("AWSClient not setup. Use application.aws.client = ...")
+                guard let provider = self.application.storage[ProviderKey.self] else {
+                    fatalError("DynamoDBSessions not setup. Use app.dynamoDBSessions.provider = DynamoDBSessionsProvider...")
                 }
-                return client
+                return provider
             }
             nonmutating set {
-                self.application.storage.set(ClientKey.self, to: newValue) {
-                    try $0.syncShutdown()
-                }
+                self.application.storage.set(ProviderKey.self, to: newValue)
             }
         }
 
@@ -29,30 +41,18 @@ public extension Application {
     }
 }
 
-public extension Request {
-    var aws: AWS {
-        .init(request: self)
-    }
-
-    struct AWS {
-        var client: AWSClient {
-            return request.application.aws.client
-        }
-
-        let request: Request
-    }
-
-    #warning("TODO")
-    var dynamoDBProvider: DynamoDBProvider {
-        .init(client: self.aws.client, tableName: "", region: nil, endpoint: nil)
-    }
-}
-
-public struct DynamoDBProvider {
+public struct DynamoDBSessionsProvider {
     let client: AWSClient
     let tableName: String
     let region: Region?
     let endpoint: String?
+
+    public init(client: AWSClient, tableName: String, region: Region? = nil, endpoint: String? = nil) {
+        self.client = client
+        self.tableName = tableName
+        self.region = region
+        self.endpoint = endpoint
+    }
 
     func make() -> (DynamoDB, String) {
         let dynamoDB = DynamoDB(client: client, region: region, endpoint: endpoint)
