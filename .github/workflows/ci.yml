@@ -16,7 +16,7 @@ jobs:
     - name: Run tests
       run: swift test --enable-code-coverage --sanitize=thread
     - name: Setup container for codecov upload
-      run: sudo apt-get update && sudo apt-get install curl -y
+      run: sudo apt-get update && sudo apt-get install curl llvm -y
     - name: Process coverage file
       run: llvm-cov show .build/x86_64-unknown-linux-gnu/debug/VaporDynamoDBSessionsPackageTests.xctest -instr-profile=.build/debug/codecov/default.profdata > coverage.txt
     - name: Upload code coverage
