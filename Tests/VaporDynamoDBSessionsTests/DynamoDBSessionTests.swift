@@ -16,7 +16,7 @@ final class DynamoDBSessionTests: XCTestCase {
         app = Application(.testing, .shared(eventLoopGroup))
         let awsClient = AWSClient(credentialProvider: .static(accessKeyId: "SOMETHING", secretAccessKey: "SOMETHINGLESE"), httpClientProvider: .shared(app.http.client.shared))
         app.aws.client = awsClient
-        let dynamoDBEndpoint = "http://localhost:8000"
+        let dynamoDBEndpoint = Environment.get("DYNAMODB_ENDPOINT") ?? "http://localhost:8000"
         dynamoDB = DynamoDB(client: awsClient, region: .useast1, endpoint: dynamoDBEndpoint)
         app.dynamoDBSessions.provider = DynamoDBSessionsProvider(client: app.aws.client, tableName: tableName, region: .useast1, endpoint: dynamoDBEndpoint)
         app.sessions.use(.dynamodb)
