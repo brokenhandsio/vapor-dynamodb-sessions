@@ -22,10 +22,25 @@ final class DynamoDBSessionTests: XCTestCase {
         app.sessions.use(.dynamodb)
         app.middleware.use(app.sessions.middleware)
 
-        app.routes.get { req -> String in
-            req.session.data["test"] = "TEST"
+        app.routes.get("set") { req -> String in
+            let value = try req.query.get(String.self, at: "value")
+            req.session.data["test"] = value
             return "OK"
         }
+
+        app.routes.get("get") { req -> String in
+            guard let value = req.session.data["test"] else {
+                throw Abort(.internalServerError)
+            }
+            return value
+        }
+
+        app.routes.get("delete") { req -> String in
+            req.session.destroy()
+            return "OK"
+        }
+
+        try setupTable()
     }
 
     override func tearDownWithError() throws {
@@ -52,5 +67,26 @@ final class DynamoDBSessionTests: XCTestCase {
             throw Abort(.internalServerError)
         }
         return count
+    }
+
+    func setupTable() throws {
+        let deleteTableInput = DynamoDB.DeleteTableInput(tableName: self.tableName)
+        do {
+            _ = try dynamoDB.deleteTable(deleteTableInput).wait()
+        } catch {
+            // Swallow error in case table doesn't exist yet
+        }
+        let createTableInput = DynamoDB.CreateTableInput(
+            attributeDefinitions: [
+                .init(attributeName: "pk", attributeType: .s),
+                .init(attributeName: "sk", attributeType: .s),
+            ],
+            billingMode: .payPerRequest,
+            keySchema: [
+                .init(attributeName: "pk", keyType: .hash),
+                .init(attributeName: "sk", keyType: .range)
+            ],
+            tableName: self.tableName)
+        _ = try dynamoDB.createTable(createTableInput).wait()
     }
 }

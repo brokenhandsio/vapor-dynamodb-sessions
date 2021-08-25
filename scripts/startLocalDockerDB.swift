@@ -1,12 +1,10 @@
 #!/usr/bin/swift
 import Foundation
 
-let tableName = "session-tests"
 let port = 8000
 let containerName = "dynamodb-vapor-sessions-test"
-let awsProfileName = "tests"
 
-print("Starting local database in container \(containerName). \nTable name is \(tableName)")
+print("Starting local database in container \(containerName)")
 
 @discardableResult
 func shell(_ args: String..., returnStdOut: Bool = false) -> (Int32, Pipe) {
@@ -45,15 +43,3 @@ guard dockerResult == 0 else {
 }
 
 print("Database created in Docker 🐳")
-
-let (createTableResult, _) = shell("aws", "dynamodb", "create-table", "--table-name", tableName, "--region", "us-east-1",
-   "--attribute-definitions",
-        "AttributeName=pk,AttributeType=S",
-        "AttributeName=sk,AttributeType=S",
-   "--key-schema", "AttributeName=pk,KeyType=HASH", "AttributeName=sk,KeyType=RANGE",
-   "--billing-mode=PAY_PER_REQUEST", "--endpoint-url",  "http://localhost:\(port)", "--profile", awsProfileName, returnStdOut: true)
-
- guard createTableResult == 0 else {
-   print("❌ ERROR: Failed to create the table")
-   exit(1)
- }
