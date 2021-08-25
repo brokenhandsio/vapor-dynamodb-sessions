@@ -49,14 +49,45 @@ final class DynamoDBSessionTests: XCTestCase {
     }
 
     func testSessionsWorksAsExpected() throws {
-        try app.test(.GET, "/", afterResponse: { res in
+        let value = "test-value-\(Int.random())"
+        try app.test(.GET, "/set?value=\(value)", afterResponse: { res in
             XCTAssertEqual(res.status, .ok)
-            XCTAssertNotNil(res.headers.setCookie?.all["vapor-session"])
-
+            let sessionIDCookie = try XCTUnwrap(res.headers.setCookie?.all["vapor-session"])
             let count = try getTableCount()
             XCTAssertEqual(count, 1)
-        })
 
+            var headers = HTTPHeaders()
+            headers.add(name: .cookie, value: sessionIDCookie.serialize(name: "vapor-session"))
+            try app.test(.GET, "/get", headers: headers, afterResponse: { res in
+                XCTAssertEqual(res.status, .ok)
+                XCTAssertEqual(res.body.string, value)
+
+                let count = try getTableCount()
+                XCTAssertEqual(count, 1)
+            })
+
+            let value2 = "another-test-value-\(Int.random())"
+            try app.test(.GET, "/set?value=\(value2)", headers: headers, afterResponse: { res in
+                XCTAssertEqual(res.status, .ok)
+                let count = try getTableCount()
+                XCTAssertEqual(count, 1)
+            })
+
+            try app.test(.GET, "/get", headers: headers, afterResponse: { res in
+                XCTAssertEqual(res.status, .ok)
+                XCTAssertEqual(res.body.string, value2)
+
+                let count = try getTableCount()
+                XCTAssertEqual(count, 1)
+            })
+
+            try app.test(.GET, "/delete", headers: headers, afterResponse: { res in
+                XCTAssertEqual(res.status, .ok)
+
+                let count = try getTableCount()
+                XCTAssertEqual(count, 0)
+            })
+        })
     }
 
     func getTableCount(file: StaticString = #file, line: UInt = #line) throws -> Int {
