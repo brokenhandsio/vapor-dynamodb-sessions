@@ -3,21 +3,18 @@ on:
   push:
   pull_request:
 jobs:
-  xenial:
-    container: 
-      image: vapor/swift:5.2-xenial
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
+    services:
+      dynamodb:
+        image: "amazon/dynamodb-local"
+        ports:
+          - 8000:8000
     steps:
     - uses: actions/checkout@master
-    - run: swift test --enable-test-discovery --enable-code-coverage --sanitize=thread
-  bionic:
-    container: 
-      image: vapor/swift:5.2-bionic
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - name: Run Bionic Tests
-      run: swift test --enable-test-discovery --enable-code-coverage --sanitize=thread
+    - name: Run tests
+      run: swift test --enable-code-coverage --sanitize=thread
     - name: Setup container for codecov upload
       run: apt-get update && apt-get install curl -y
     - name: Process coverage file
