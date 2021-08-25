@@ -6,6 +6,8 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    container: 
+      image: swift:5.4
     services:
       dynamodb:
         image: "amazon/dynamodb-local"
@@ -16,7 +18,7 @@ jobs:
     - name: Run tests
       run: swift test --enable-code-coverage --sanitize=thread
     - name: Setup container for codecov upload
-      run: sudo apt-get update && sudo apt-get install curl llvm -y
+      run: apt-get update && apt-get install curl -y
     - name: Process coverage file
       run: llvm-cov show .build/x86_64-unknown-linux-gnu/debug/VaporDynamoDBSessionsPackageTests.xctest -instr-profile=.build/debug/codecov/default.profdata > coverage.txt
     - name: Upload code coverage
