@@ -31,7 +31,7 @@ final class DynamoDBSessionTests: XCTestCase {
 
         app.routes.get("get") { req -> String in
             guard let value = req.session.data["test"] else {
-                throw Abort(.internalServerError)
+                throw Abort(.badRequest)
             }
             return value
         }
@@ -144,6 +144,24 @@ final class DynamoDBSessionTests: XCTestCase {
             })
         })
     }
+
+    func testExpiredSessionIsDiscarded() throws {
+        let sessionID = SessionID(string: UUID().uuidString)
+        var data = SessionData()
+        data["test"] = "Some value"
+        let session = SessionRecord(id: sessionID, data: data, expiryDate: Date().addingTimeInterval(-3600))
+        let input = DynamoDB.PutItemCodableInput(item: session, tableName: self.tableName)
+        _ = try self.dynamoDB.putItem(input, logger: app.logger, on: app.eventLoopGroup.next()).wait()
+
+        var headers = HTTPHeaders()
+        let sessionIDCookie = HTTPCookies.Value(string: sessionID.string)
+        headers.add(name: .cookie, value: sessionIDCookie.serialize(name: "vapor-session"))
+        try app.test(.GET, "/get", headers: headers, afterResponse: { res in
+            XCTAssertEqual(res.status, .badRequest)
+        })
+    }
+
+    // MARK: - Helpers
 
     func getTableCount(file: StaticString = #file, line: UInt = #line) throws -> Int {
         let scanResult = try scanTable()

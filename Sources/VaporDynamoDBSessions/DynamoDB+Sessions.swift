@@ -15,6 +15,11 @@ struct DynamoDBSessions: SessionDriver {
         let (dynamoDB, tableName) = request.dynamoDBSessions.provider.make()
         let input = DynamoDB.GetItemInput(key: ["pk": .s(sessionID.string), "sk": .s("SESSION_RECORD")], tableName: tableName)
         return dynamoDB.getItem(input, type: SessionRecord.self, logger: request.logger, on: request.eventLoop).flatMapThrowing { result in
+            if let date = result.item?.expiryDate {
+                guard date >= Date() else {
+                    return nil
+                }
+            }
             return result.item?.data
         }
     }
