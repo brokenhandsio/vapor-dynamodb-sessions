@@ -1,5 +1,5 @@
 import XCTest
-import VaporDynamoDBSessions
+@testable import VaporDynamoDBSessions
 import Vapor
 import XCTVapor
 import SotoDynamoDB
@@ -10,13 +10,14 @@ final class DynamoDBSessionTests: XCTestCase {
     var eventLoopGroup: EventLoopGroup!
     let tableName = "session-tests"
     var dynamoDB: DynamoDB!
+    var dynamoDBEndpoint: String!
 
     override func setUpWithError() throws {
         eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
         app = Application(.testing, .shared(eventLoopGroup))
         let awsClient = AWSClient(credentialProvider: .static(accessKeyId: "SOMETHING", secretAccessKey: "SOMETHINGLESE"), httpClientProvider: .shared(app.http.client.shared))
         app.aws.client = awsClient
-        let dynamoDBEndpoint = Environment.get("DYNAMODB_ENDPOINT") ?? "http://localhost:8000"
+        dynamoDBEndpoint = Environment.get("DYNAMODB_ENDPOINT") ?? "http://localhost:8000"
         dynamoDB = DynamoDB(client: awsClient, region: .useast1, endpoint: dynamoDBEndpoint)
         app.dynamoDBSessions.provider = DynamoDBSessionsProvider(client: app.aws.client, tableName: tableName, region: .useast1, endpoint: dynamoDBEndpoint)
         app.sessions.use(.dynamodb)
@@ -90,14 +91,60 @@ final class DynamoDBSessionTests: XCTestCase {
         })
     }
 
+    func testSessionsExpirySet() throws {
+        let sessionLength: TimeInterval = 60 * 60 * 24 * 30
+        app.dynamoDBSessions.provider = DynamoDBSessionsProvider(client: app.aws.client, tableName: tableName, region: .useast1, endpoint: dynamoDBEndpoint, sessionLength: sessionLength)
+        app.sessions.use(.dynamodb)
+        app.middleware = .init()
+        app.middleware.use(ErrorMiddleware.default(environment: .testing))
+        app.middleware.use(app.sessions.middleware)
+
+        let value = "test-value-\(Int.random())"
+        try app.test(.GET, "/set?value=\(value)", afterResponse: { res in
+            XCTAssertEqual(res.status, .ok)
+            let sessionIDCookie = try XCTUnwrap(res.headers.setCookie?.all["vapor-session"])
+            let count = try getTableCount()
+            XCTAssertEqual(count, 1)
+
+            let data = try scanTable()
+            let sessions = try data.items.map { try $0.map { try DynamoDBDecoder().decode(SessionRecord.self, from: $0) } }
+            let timeInterval = try XCTUnwrap(sessions?.first?.expiryDate?.timeIntervalSince1970)
+            XCTAssertEqual(timeInterval, Date().addingTimeInterval(sessionLength).timeIntervalSince1970, accuracy: 5.0)
+
+            var headers = HTTPHeaders()
+            headers.add(name: .cookie, value: sessionIDCookie.serialize(name: "vapor-session"))
+            try app.test(.GET, "/get", headers: headers, afterResponse: { res in
+                XCTAssertEqual(res.status, .ok)
+                XCTAssertEqual(res.body.string, value)
+
+                let count = try getTableCount()
+                XCTAssertEqual(count, 1)
+            })
+
+            let value2 = "another-test-value-\(Int.random())"
+            try app.test(.GET, "/set?value=\(value2)", headers: headers, afterResponse: { res in
+                XCTAssertEqual(res.status, .ok)
+                let count = try getTableCount()
+                XCTAssertEqual(count, 1)
+            })
+
+
+        })
+    }
+
     func getTableCount(file: StaticString = #file, line: UInt = #line) throws -> Int {
-        let scanInput = DynamoDB.ScanInput(select: .count, tableName: self.tableName)
-        let scanResult = try dynamoDB.scan(scanInput).wait()
+        let scanResult = try scanTable()
         guard let count = scanResult.count else {
             XCTFail("No count when there should be", file: file, line: line)
             throw Abort(.internalServerError)
         }
         return count
+    }
+
+    func scanTable(file: StaticString = #file, line: UInt = #line) throws -> DynamoDB.ScanOutput {
+        let scanInput = DynamoDB.ScanInput(tableName: self.tableName)
+        let scanResult = try dynamoDB.scan(scanInput).wait()
+        return scanResult
     }
 
     func setupTable() throws {

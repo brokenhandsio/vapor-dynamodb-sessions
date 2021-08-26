@@ -4,7 +4,8 @@ import SotoDynamoDB
 struct DynamoDBSessions: SessionDriver {
     func createSession(_ data: SessionData, for request: Request) -> EventLoopFuture<SessionID> {
         let sessionID = SessionID(string: UUID().uuidString)
-        let sessionRecord = SessionRecord(id: sessionID, data: data)
+        let expiryDate = request.dynamoDBSessions.provider.getExpiryDate()
+        let sessionRecord = SessionRecord(id: sessionID, data: data, expiryDate: expiryDate)
         let (dynamoDB, tableName) = request.dynamoDBSessions.provider.make()
         let input = DynamoDB.PutItemCodableInput(item: sessionRecord, tableName: tableName)
         return dynamoDB.putItem(input, logger: request.logger, on: request.eventLoop).transform(to: sessionID)
@@ -19,7 +20,7 @@ struct DynamoDBSessions: SessionDriver {
     }
 
     func updateSession(_ sessionID: SessionID, to data: SessionData, for request: Request) -> EventLoopFuture<SessionID> {
-        let updatedItem = SessionRecord(id: sessionID, data: data)
+        let updatedItem = SessionRecordWithoutExpiry(id: sessionID, data: data)
         let (dynamoDB, tableName) = request.dynamoDBSessions.provider.make()
         let input = DynamoDB.UpdateItemCodableInput(key: ["pk", "sk"], tableName: tableName, updateItem: updatedItem)
         return dynamoDB.updateItem(input, logger: request.logger, on: request.eventLoop).transform(to: sessionID)
