@@ -57,6 +57,10 @@ final class DynamoDBSessionTests: XCTestCase {
             let count = try getTableCount()
             XCTAssertEqual(count, 1)
 
+            let data = try scanTable()
+            let sessions = try data.items.map { try $0.map { try DynamoDBDecoder().decode(SessionRecord.self, from: $0) } }
+            XCTAssertEqual(sessions?.first?.data["test"], value)
+
             var headers = HTTPHeaders()
             headers.add(name: .cookie, value: sessionIDCookie.serialize(name: "vapor-session"))
             try app.test(.GET, "/get", headers: headers, afterResponse: { res in
@@ -72,6 +76,10 @@ final class DynamoDBSessionTests: XCTestCase {
                 XCTAssertEqual(res.status, .ok)
                 let count = try getTableCount()
                 XCTAssertEqual(count, 1)
+
+                let data = try scanTable()
+                let sessions = try data.items.map { try $0.map { try DynamoDBDecoder().decode(SessionRecord.self, from: $0) } }
+                XCTAssertEqual(sessions?.first?.data["test"], value2)
             })
 
             try app.test(.GET, "/get", headers: headers, afterResponse: { res in
@@ -110,6 +118,7 @@ final class DynamoDBSessionTests: XCTestCase {
             let sessions = try data.items.map { try $0.map { try DynamoDBDecoder().decode(SessionRecord.self, from: $0) } }
             let timeInterval = try XCTUnwrap(sessions?.first?.expiryDate?.timeIntervalSince1970)
             XCTAssertEqual(timeInterval, Date().addingTimeInterval(sessionLength).timeIntervalSince1970, accuracy: 5.0)
+            XCTAssertEqual(sessions?.first?.data["test"], value)
 
             var headers = HTTPHeaders()
             headers.add(name: .cookie, value: sessionIDCookie.serialize(name: "vapor-session"))
@@ -126,9 +135,13 @@ final class DynamoDBSessionTests: XCTestCase {
                 XCTAssertEqual(res.status, .ok)
                 let count = try getTableCount()
                 XCTAssertEqual(count, 1)
+
+                let data = try scanTable()
+                let sessions = try data.items.map { try $0.map { try DynamoDBDecoder().decode(SessionRecord.self, from: $0) } }
+                XCTAssertEqual(sessions?.first?.data["test"], value2)
+                let newTimeInterval = try XCTUnwrap(sessions?.first?.expiryDate?.timeIntervalSince1970)
+                XCTAssertEqual(timeInterval, newTimeInterval)
             })
-
-
         })
     }
 
