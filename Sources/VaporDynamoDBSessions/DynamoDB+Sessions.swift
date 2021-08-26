@@ -3,7 +3,7 @@ import SotoDynamoDB
 
 struct DynamoDBSessions: SessionDriver {
     func createSession(_ data: SessionData, for request: Request) -> EventLoopFuture<SessionID> {
-        let sessionID = SessionID(string: UUID().uuidString)
+        let sessionID = generateID()
         let expiryDate = request.dynamoDBSessions.provider.getExpiryDate()
         let sessionRecord = SessionRecord(id: sessionID, data: data, expiryDate: expiryDate)
         let (dynamoDB, tableName) = request.dynamoDBSessions.provider.make()
@@ -37,7 +37,13 @@ struct DynamoDBSessions: SessionDriver {
         return dynamoDB.deleteItem(input, logger: request.logger, on: request.eventLoop).transform(to: ())
     }
 
-    
+    private func generateID() -> SessionID {
+        var bytes = Data()
+        for _ in 0..<32 {
+            bytes.append(UInt8.random(in: UInt8.min..<UInt8.max))
+        }
+        return .init(string: bytes.base64EncodedString())
+    }
 }
 
 extension Application.Sessions.Provider {
