@@ -65,3 +65,15 @@ app.middleware.use(app.sessions.middleware)
 ### Database Requirements
 
 `VaporDynamoDBSessions` will work with its own table or as part of an application using a [single-table design](https://www.alexdebrie.com/posts/dynamodb-single-table/). The only requirements for the library to work is that the table must have a partition key named `pk` and a sort key named `sk`.
+
+## Session Expiry
+
+`VaporDynamoDBSessions` supports adding an expiry date to sessions. Any session that has expired will be discarded by the driver. To configure this, pass a session duration when configuring the provider:
+
+```swift
+// 30 days
+let sessionLength: TimeInterval = 60 * 60 * 24 * 30
+app.dynamoDBSessions.provider = DynamoDBSessionsProvider(client: app.aws.client, tableName: tableName, region: .useast1, endpoint: dynamoDBEndpoint, sessionLength: sessionLength)
+```
+
+This will add a field to the session record with the key `expiryDate` as a `number` in epoch time. This allows you to use DynamoDB's [TTL](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html) feature to auto-delete expired session data and clean up the database.
