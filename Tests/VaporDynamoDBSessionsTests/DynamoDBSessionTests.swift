@@ -154,7 +154,7 @@ final class DynamoDBSessionTests: XCTestCase {
         data["test"] = "Some value"
         let session = SessionRecord(id: sessionID, data: data, expiryDate: Date().addingTimeInterval(-3600))
         let input = DynamoDB.PutItemCodableInput(item: session, tableName: self.tableName)
-        _ = try self.dynamoDB.putItem(input, logger: app.logger, on: app.eventLoopGroup.next()).wait()
+        _ = try self.dynamoDB.putItem(input, context: context, on: app.eventLoopGroup.next()).wait()
 
         var headers = HTTPHeaders()
         let sessionIDCookie = HTTPCookies.Value(string: sessionID.string)
@@ -177,7 +177,7 @@ final class DynamoDBSessionTests: XCTestCase {
 
     func scanTable(file: StaticString = #file, line: UInt = #line) throws -> DynamoDB.ScanOutput {
         let scanInput = DynamoDB.ScanInput(tableName: self.tableName)
-        let scanResult = try dynamoDB.scan(scanInput).wait()
+        let scanResult = try dynamoDB.scan(scanInput, context: context, on: app.eventLoopGroup.next()).wait()
         return scanResult
     }
 
